@@ -17,6 +17,7 @@
 - 🎯 **Simple API**: Create indicator, bind to frame, access values with attributes
 - 💾 **Dynamic storage**: Uses `_data` dict pattern like `trading-frame` Period
 - 🔔 **Event-driven**: Built on the same event system as TimeFrame
+- 🔗 **Composite indicators**: Indicators can depend on other indicators
 
 ## Supported Indicators
 
@@ -26,7 +27,14 @@
 
 ### Trend
 - **SMA** (Simple Moving Average) - Trend identification
+- **EMA** (Exponential Moving Average) - More responsive trend following
 - **Bollinger Bands** - Volatility and price level analysis
+- **Pivot Points** - Swing High/Low detection with alternation rule
+- **FVG** (Fair Value Gap) - ICT/SMC gap detection
+- **SMA Crossover** - Golden/Death cross detection (composite indicator)
+
+### Volatility
+- **ATR** (Average True Range) - Volatility measurement
 
 ## Installation
 
@@ -47,7 +55,7 @@ pip install -e .
 
 ```python
 from trading_frame import TimeFrame, Candle
-from trading_indicators import RSI, SMA, MACD, BollingerBands
+from trading_indicators import RSI, SMA, EMA, MACD, BollingerBands, ATR
 
 # Create a frame
 frame = TimeFrame('5T', max_periods=100)
@@ -55,8 +63,10 @@ frame = TimeFrame('5T', max_periods=100)
 # Create indicators (automatically bind to frame)
 rsi = RSI(frame=frame, length=14, column_name='RSI_14')
 sma20 = SMA(frame=frame, period=20, column_name='SMA_20')
+ema20 = EMA(frame=frame, period=20, column_name='EMA_20')
 macd = MACD(frame=frame, fast=12, slow=26, signal=9)
 bb = BollingerBands(frame=frame, period=20)
+atr = ATR(frame=frame, length=14, column_name='ATR_14')
 
 # Feed candles - all indicators update automatically
 for candle in candles:
@@ -65,8 +75,10 @@ for candle in candles:
 # Access indicator values with named attributes
 print(f"RSI: {rsi.periods[-1].RSI_14}")
 print(f"SMA: {sma20.periods[-1].SMA_20}")
+print(f"EMA: {ema20.periods[-1].EMA_20}")
 print(f"MACD Line: {macd.periods[-1].MACD_LINE}")
 print(f"BB Upper: {bb.periods[-1].BB_UPPER}")
+print(f"ATR: {atr.periods[-1].ATR_14}")
 ```
 
 ## Usage Examples
@@ -122,6 +134,26 @@ if sma20.get_latest() > sma50.get_latest():
 # Access via periods
 for period in sma20.periods:
     print(f"Date: {period.open_date}, SMA20: {period.SMA_20}")
+```
+
+### EMA (Exponential Moving Average)
+
+```python
+from trading_indicators import EMA
+
+# Create EMA indicator (more responsive than SMA)
+ema20 = EMA(frame=frame, period=20, column_name='EMA_20', price_field='close')
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest_ema = ema20.get_latest()
+print(f"Current EMA: {latest_ema}")
+
+# Export to NumPy
+ema_array = ema20.to_numpy()
 ```
 
 ### MACD (Moving Average Convergence Divergence)
@@ -199,11 +231,130 @@ if bb.is_squeeze(threshold=0.02):
     print("Bollinger Band squeeze detected")
 ```
 
+### ATR (Average True Range)
+
+```python
+from trading_indicators import ATR
+
+# Create ATR indicator
+atr = ATR(frame=frame, length=14, column_name='ATR_14')
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest_atr = atr.get_latest()
+print(f"Current ATR: {latest_atr}")
+
+# Use for position sizing or stop-loss calculation
+stop_distance = latest_atr * 2  # 2 ATR stop loss
+print(f"Stop distance: {stop_distance}")
+
+# Export to NumPy
+atr_array = atr.to_numpy()
+```
+
+### Pivot Points (Swing High/Low Detection)
+
+```python
+from trading_indicators import PivotPoints
+
+# Create Pivot Points indicator
+pivots = PivotPoints(
+    frame=frame,
+    left_bars=5,
+    right_bars=5,
+    column_names=['SWING_HIGH', 'SWING_LOW']
+)
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access pivot points (marked with lag of right_bars)
+for period in pivots.periods:
+    swing_high = getattr(period, 'SWING_HIGH', None)
+    swing_low = getattr(period, 'SWING_LOW', None)
+
+    if swing_high is not None:
+        print(f"Swing High at {period.open_date}: {swing_high}")
+    if swing_low is not None:
+        print(f"Swing Low at {period.open_date}: {swing_low}")
+
+# Export to NumPy (returns dict)
+pivots_data = pivots.to_numpy()
+```
+
+### FVG (Fair Value Gap)
+
+```python
+from trading_indicators import FVG
+
+# Create FVG indicator
+fvg = FVG(
+    frame=frame,
+    column_names=['FVG_TOP', 'FVG_BOTTOM', 'FVG_TYPE']
+)
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Check for gaps
+for period in fvg.periods:
+    fvg_type = getattr(period, 'FVG_TYPE', None)
+
+    if fvg_type is not None:
+        fvg_top = period.FVG_TOP
+        fvg_bottom = period.FVG_BOTTOM
+
+        if fvg.is_bullish_fvg(period):
+            print(f"Bullish FVG at {period.open_date}: [{fvg_bottom}, {fvg_top}]")
+        elif fvg.is_bearish_fvg(period):
+            print(f"Bearish FVG at {period.open_date}: [{fvg_bottom}, {fvg_top}]")
+
+# Export to NumPy (returns dict)
+fvg_data = fvg.to_numpy()
+```
+
+### SMA Crossover (Composite Indicator)
+
+```python
+from trading_indicators import SMA, SMACrossover
+
+# Create SMAs first
+sma_fast = SMA(frame=frame, period=20, column_name='SMA_20')
+sma_slow = SMA(frame=frame, period=50, column_name='SMA_50')
+
+# Create crossover indicator
+crossover = SMACrossover(
+    frame=frame,
+    fast_column='SMA_20',
+    slow_column='SMA_50',
+    column_name='SMA_CROSS'
+)
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Check for crossovers
+latest_signal = crossover.get_latest()
+if latest_signal == 1:
+    print("Golden Cross detected! (bullish)")
+elif latest_signal == -1:
+    print("Death Cross detected! (bearish)")
+
+# Export to NumPy
+signals = crossover.to_numpy()
+```
+
 ## Integration with AssetView
 
 ```python
 from trading_asset_view import AssetView
-from trading_indicators import RSI, SMA, MACD
+from trading_indicators import RSI, SMA, EMA, MACD, ATR
 
 # Create AssetView with multiple timeframes
 asset_view = AssetView("BTC/USDT", timeframes=["1T", "5T", "1H"])
@@ -213,9 +364,10 @@ rsi_1m = RSI(frame=asset_view["1T"], length=14, column_name='RSI_14')
 rsi_5m = RSI(frame=asset_view["5T"], length=14, column_name='RSI_14')
 
 sma20_1h = SMA(frame=asset_view["1H"], period=20, column_name='SMA_20')
-sma50_1h = SMA(frame=asset_view["1H"], period=50, column_name='SMA_50')
+ema50_1h = EMA(frame=asset_view["1H"], period=50, column_name='EMA_50')
 
 macd_5m = MACD(frame=asset_view["5T"], fast=12, slow=26, signal=9)
+atr_1h = ATR(frame=asset_view["1H"], length=14, column_name='ATR_14')
 
 # Feed candles - all indicators across all timeframes update automatically
 for candle in candles:
@@ -225,7 +377,9 @@ for candle in candles:
 print(f"1m RSI: {rsi_1m.get_latest()}")
 print(f"5m RSI: {rsi_5m.get_latest()}")
 print(f"1h SMA20: {sma20_1h.get_latest()}")
+print(f"1h EMA50: {ema50_1h.get_latest()}")
 print(f"5m MACD: {macd_5m.get_latest()}")
+print(f"1h ATR: {atr_1h.get_latest()}")
 ```
 
 ## Architecture
@@ -244,6 +398,18 @@ Instead of recalculating the entire indicator array on every update, each indica
 - **New Period**: Creates a new IndicatorPeriod and calculates its value
 - **Update**: Recalculates only the current period's value
 - Uses TA-Lib efficiently by extracting only necessary historical data
+
+### Lag Behavior
+
+Some indicators mark previous periods when confirmation occurs:
+- **Pivot Points**: Marks the pivot candle after `right_bars` confirmation
+- **FVG**: Marks the middle candle when gap is confirmed
+
+### Composite Indicators
+
+Composite indicators depend on other indicators:
+- **SMA Crossover**: Reads SMA values from frame periods to detect crosses
+- Demonstrates how to build higher-level indicators from basic ones
 
 ### Data Access Pattern
 
@@ -293,6 +459,17 @@ SMA(frame, period=20, column_name='SMA', price_field='close', max_periods=None)
 - `get_latest()` - Get latest SMA value
 - `to_numpy()` - Export as numpy array
 
+### EMA
+
+**Constructor:**
+```python
+EMA(frame, period=20, column_name='EMA', price_field='close', max_periods=None)
+```
+
+**Methods:**
+- `get_latest()` - Get latest EMA value
+- `to_numpy()` - Export as numpy array
+
 ### MACD
 
 **Constructor:**
@@ -321,6 +498,50 @@ BollingerBands(frame, period=20, nbdevup=2.0, nbdevdn=2.0, column_names=['BB_UPP
 - `is_squeeze(threshold=0.02)` - Detect low volatility squeeze
 - `to_numpy()` - Export as dict of numpy arrays
 
+### ATR
+
+**Constructor:**
+```python
+ATR(frame, length=14, column_name='ATR', max_periods=None)
+```
+
+**Methods:**
+- `get_latest()` - Get latest ATR value
+- `to_numpy()` - Export as numpy array
+
+### PivotPoints
+
+**Constructor:**
+```python
+PivotPoints(frame, left_bars=5, right_bars=5, column_names=['SWING_HIGH', 'SWING_LOW'], max_periods=None)
+```
+
+**Methods:**
+- `to_numpy()` - Export as dict of numpy arrays (with NaN for non-pivot periods)
+
+### FVG
+
+**Constructor:**
+```python
+FVG(frame, column_names=['FVG_TOP', 'FVG_BOTTOM', 'FVG_TYPE'], max_periods=None)
+```
+
+**Methods:**
+- `is_bullish_fvg(period)` - Check if period contains bullish FVG
+- `is_bearish_fvg(period)` - Check if period contains bearish FVG
+- `to_numpy()` - Export as dict of numpy arrays
+
+### SMACrossover
+
+**Constructor:**
+```python
+SMACrossover(frame, fast_column='SMA_FAST', slow_column='SMA_SLOW', column_name='SMA_CROSS', max_periods=None)
+```
+
+**Methods:**
+- `get_latest()` - Get latest crossover signal (+1 golden, -1 death, 0 none)
+- `to_numpy()` - Export as numpy array
+
 ## Development
 
 ### Run Tests
@@ -344,9 +565,14 @@ trading-indicators/
 │   ├── trend/
 │   │   ├── __init__.py
 │   │   ├── sma.py           # SMA indicator
-│   │   └── bollinger.py     # Bollinger Bands
-│   └── volume/
-│       └── __init__.py
+│   │   ├── ema.py           # EMA indicator
+│   │   ├── bollinger.py     # Bollinger Bands
+│   │   ├── pivot_points.py  # Swing High/Low
+│   │   ├── fvg.py           # Fair Value Gap
+│   │   └── sma_crossover.py # SMA Crossover
+│   └── volatility/
+│       ├── __init__.py
+│       └── atr.py           # ATR indicator
 ├── tests/
 ├── pyproject.toml
 └── README.md
