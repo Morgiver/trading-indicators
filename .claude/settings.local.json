@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/projects/trading/trading-frame/**)",
+      "Read(//e/projects/trading/trading-asset-view/**)",
+      "Bash(dir)",
+      "Bash(python:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(pip install:*)",
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(venv/Scripts/python.exe -m pip install:*)",
+      "Bash(mkdir:*)",
+      "Bash(git init:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
