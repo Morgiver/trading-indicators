@@ -2,12 +2,12 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Indicators: 53+](https://img.shields.io/badge/indicators-53+-green.svg)](#supported-indicators)
+[![Indicators: 57+](https://img.shields.io/badge/indicators-57+-green.svg)](#supported-indicators)
 [![TA-Lib](https://img.shields.io/badge/powered%20by-TA--Lib-orange.svg)](https://ta-lib.org/)
 
 **Technical indicators library with automatic frame synchronization** built on top of [trading-frame](https://github.com/Morgiver/trading-frame).
 
-**53+ professional-grade technical indicators** including momentum, trend, volatility, volume, and cycle analysis tools, all with automatic synchronization and event-driven updates.
+**57+ professional-grade technical indicators** including momentum, trend, volatility, volume, cycle, and price analysis tools, all with automatic synchronization and event-driven updates.
 
 ## Overview
 
@@ -92,6 +92,12 @@
 - **HT_PHASOR** (Phasor Components) - InPhase and Quadrature components for cycle analysis
 - **HT_SINE** (Sine Wave) - Sine and LeadSine waves for cycle prediction and timing
 - **HT_TRENDMODE** (Trend vs Cycle Mode) - Binary indicator: 1 = trending market, 0 = cycling market
+
+### Price (4 indicators)
+- **AVGPRICE** (Average Price) - (Open + High + Low + Close) / 4
+- **MEDPRICE** (Median Price) - (High + Low) / 2
+- **TYPPRICE** (Typical Price) - (High + Low + Close) / 3
+- **WCLPRICE** (Weighted Close Price) - (High + Low + 2*Close) / 4
 
 ## Installation
 
@@ -845,6 +851,72 @@ print(f"Phase angle: {angle:.2f}°")
 phasor_data = ht_phasor.to_numpy()
 inphase_array = phasor_data['HT_INPHASE']
 quadrature_array = phasor_data['HT_QUADRATURE']
+```
+
+### Price Indicators
+
+```python
+from trading_indicators import AVGPRICE, MEDPRICE, TYPPRICE, WCLPRICE
+
+# Create price indicators
+avgprice = AVGPRICE(frame=frame, column_name='AVGPRICE')
+medprice = MEDPRICE(frame=frame, column_name='MEDPRICE')
+typprice = TYPPRICE(frame=frame, column_name='TYPPRICE')
+wclprice = WCLPRICE(frame=frame, column_name='WCLPRICE')
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access average price (O+H+L+C)/4
+avg = avgprice.get_latest()
+print(f"Average Price: {avg:.2f}")
+
+# Check if average price is above/below close
+if avgprice.is_above_close():
+    print("Bearish bar - average above close")
+elif avgprice.is_below_close():
+    print("Bullish bar - average below close")
+
+# Get spread from close
+spread = avgprice.get_spread_from_close()
+print(f"AVGPRICE - Close spread: {spread:.2f}")
+
+# Access median price (H+L)/2
+med = medprice.get_latest()
+print(f"Median Price: {med:.2f}")
+
+# Check where close is in the range
+position = medprice.get_close_position_in_range()
+print(f"Close position in range: {position:.2%}")  # 0 = at low, 1 = at high
+
+# Get range size
+range_size = medprice.get_range_size()
+print(f"High-Low range: {range_size:.2f}")
+
+# Access typical price (H+L+C)/3
+typ = typprice.get_latest()
+print(f"Typical Price: {typ:.2f}")
+
+# Check trend direction
+if typprice.is_rising(lookback=3):
+    print("Typical price rising over last 3 periods")
+elif typprice.is_falling(lookback=3):
+    print("Typical price falling over last 3 periods")
+
+# Access weighted close price (H+L+2*C)/4
+wcl = wclprice.get_latest()
+print(f"Weighted Close Price: {wcl:.2f}")
+
+# Get momentum
+momentum = wclprice.get_momentum(lookback=5)
+print(f"5-period momentum: {momentum:.2f}")
+
+# Export to NumPy
+avgprice_array = avgprice.to_numpy()
+medprice_array = medprice.to_numpy()
+typprice_array = typprice.to_numpy()
+wclprice_array = wclprice.to_numpy()
 ```
 
 ## Integration with AssetView
