@@ -237,6 +237,80 @@ class BaseIndicator(ABC):
         """
         raise NotImplementedError
 
+    def to_pandas(self):
+        """
+        Export indicator values as pandas Series or DataFrame.
+
+        Returns:
+            pd.Series for single-value indicators
+            pd.DataFrame for multi-value indicators
+        """
+        import pandas as pd
+        import numpy as np
+
+        data = self.to_numpy()
+
+        # Create timestamps index from periods
+        timestamps = [p.open_date for p in self.periods]
+
+        # Handle single array (Series) or dict of arrays (DataFrame)
+        if isinstance(data, dict):
+            return pd.DataFrame(data, index=timestamps)
+        else:
+            # Get column name from indicator
+            column_name = getattr(self, 'column_name', self.__class__.__name__)
+            return pd.Series(data, index=timestamps, name=column_name)
+
+    def to_normalized(self, method='minmax', feature_range=(0, 1)):
+        """
+        Export normalized indicator values.
+
+        Args:
+            method: Normalization method ('minmax' or 'zscore')
+            feature_range: Target range for minmax normalization (default: (0, 1))
+
+        Returns:
+            np.ndarray or Dict[str, np.ndarray] with normalized values
+        """
+        import numpy as np
+
+        data = self.to_numpy()
+
+        def normalize_array(arr, method, feature_range):
+            """Normalize a single array."""
+            arr = np.array(arr, dtype=float)
+
+            # Remove NaN values for calculation
+            valid_mask = ~np.isnan(arr)
+            if not valid_mask.any():
+                return arr
+
+            if method == 'minmax':
+                min_val = np.nanmin(arr)
+                max_val = np.nanmax(arr)
+                if max_val == min_val:
+                    return np.full_like(arr, feature_range[0])
+                normalized = (arr - min_val) / (max_val - min_val)
+                # Scale to feature_range
+                normalized = normalized * (feature_range[1] - feature_range[0]) + feature_range[0]
+                return normalized
+
+            elif method == 'zscore':
+                mean = np.nanmean(arr)
+                std = np.nanstd(arr)
+                if std == 0:
+                    return np.zeros_like(arr)
+                return (arr - mean) / std
+
+            else:
+                raise ValueError(f"Unknown normalization method: {method}. Use 'minmax' or 'zscore'.")
+
+        # Handle dict of arrays or single array
+        if isinstance(data, dict):
+            return {key: normalize_array(arr, method, feature_range) for key, arr in data.items()}
+        else:
+            return normalize_array(data, method, feature_range)
+
     def __repr__(self) -> str:
         """String representation."""
         return f"{self.__class__.__name__}(periods={len(self.periods)})"
