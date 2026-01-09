@@ -2,12 +2,12 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Indicators: 45+](https://img.shields.io/badge/indicators-45+-green.svg)](#supported-indicators)
+[![Indicators: 48+](https://img.shields.io/badge/indicators-48+-green.svg)](#supported-indicators)
 [![TA-Lib](https://img.shields.io/badge/powered%20by-TA--Lib-orange.svg)](https://ta-lib.org/)
 
 **Technical indicators library with automatic frame synchronization** built on top of [trading-frame](https://github.com/Morgiver/trading-frame).
 
-**45+ professional-grade technical indicators** including momentum, trend, and volatility analysis tools, all with automatic synchronization and event-driven updates.
+**48+ professional-grade technical indicators** including momentum, trend, volatility, and volume analysis tools, all with automatic synchronization and event-driven updates.
 
 ## Overview
 
@@ -78,8 +78,13 @@
 - **Pivot Points** - Swing High/Low detection with alternation rule
 - **FVG** (Fair Value Gap) - ICT/SMC gap detection
 
-### Volatility
+### Volatility (1 indicator)
 - **ATR** (Average True Range) - Volatility measurement
+
+### Volume (3 indicators)
+- **AD** (Chaikin A/D Line) - Accumulation/Distribution line
+- **ADOSC** (Chaikin A/D Oscillator) - A/D momentum oscillator
+- **OBV** (On Balance Volume) - Cumulative volume-based indicator
 
 ## Installation
 
@@ -536,6 +541,121 @@ if aroonosc.is_bullish():
     print("Bullish (Aroon Up > Aroon Down)")
 ```
 
+### AD (Chaikin A/D Line)
+
+```python
+from trading_indicators import AD
+
+# Create AD indicator
+ad = AD(frame=frame, column_name='AD')
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest_ad = ad.get_latest()
+print(f"Current A/D Line: {latest_ad}")
+
+# Check accumulation/distribution
+if ad.is_accumulating():
+    print("Accumulation detected (buying pressure)")
+
+if ad.is_distributing():
+    print("Distribution detected (selling pressure)")
+
+# Detect divergences
+if ad.is_bullish_divergence(lookback=10):
+    print("Bullish divergence: Price falling but A/D rising")
+
+if ad.is_bearish_divergence(lookback=10):
+    print("Bearish divergence: Price rising but A/D falling")
+
+# Export to NumPy
+ad_array = ad.to_numpy()
+```
+
+### ADOSC (Chaikin A/D Oscillator)
+
+```python
+from trading_indicators import ADOSC
+
+# Create ADOSC indicator
+adosc = ADOSC(frame=frame, fast=3, slow=10, column_name='ADOSC')
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest_adosc = adosc.get_latest()
+print(f"Current A/D Oscillator: {latest_adosc}")
+
+# Check conditions
+if adosc.is_bullish():
+    print("ADOSC > 0: Buying pressure dominant")
+
+if adosc.is_bearish():
+    print("ADOSC < 0: Selling pressure dominant")
+
+# Detect crossovers
+if adosc.is_bullish_crossover():
+    print("ADOSC crossed above zero (bullish signal)")
+
+if adosc.is_bearish_crossover():
+    print("ADOSC crossed below zero (bearish signal)")
+
+# Detect divergences
+if adosc.is_bullish_divergence(lookback=10):
+    print("Bullish divergence detected")
+
+# Export to NumPy
+adosc_array = adosc.to_numpy()
+```
+
+### OBV (On Balance Volume)
+
+```python
+from trading_indicators import OBV
+
+# Create OBV indicator
+obv = OBV(frame=frame, column_name='OBV')
+
+# Feed candles
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest_obv = obv.get_latest()
+print(f"Current OBV: {latest_obv}")
+
+# Check trend direction
+if obv.is_rising():
+    print("OBV rising (buying pressure)")
+
+if obv.is_falling():
+    print("OBV falling (selling pressure)")
+
+# Check trend confirmation
+if obv.confirms_trend(lookback=5):
+    print("OBV confirms price trend (healthy trend)")
+
+# Get trend strength
+strength = obv.get_trend_strength(lookback=10)
+if strength is not None:
+    print(f"Trend strength: {strength:.2f}%")
+
+# Detect divergences
+if obv.is_bullish_divergence(lookback=10):
+    print("Bullish divergence: Price falling but OBV rising")
+
+if obv.is_bearish_divergence(lookback=10):
+    print("Bearish divergence: Price rising but OBV falling")
+
+# Export to NumPy
+obv_array = obv.to_numpy()
+```
+
 ## Integration with AssetView
 
 ```python
@@ -783,12 +903,19 @@ trading-indicators/
 │   │   ├── pivot_points.py  # Swing High/Low Detection
 │   │   └── fvg.py           # FVG - Fair Value Gap
 │   │
-│   └── volatility/          # 1 volatility indicator
+│   ├── volatility/          # 1 volatility indicator
+│   │   ├── __init__.py
+│   │   └── atr.py           # ATR - Average True Range
+│   │
+│   └── volume/              # 3 volume indicators
 │       ├── __init__.py
-│       └── atr.py           # ATR - Average True Range
+│       ├── ad.py            # AD - Chaikin A/D Line
+│       ├── adosc.py         # ADOSC - Chaikin A/D Oscillator
+│       └── obv.py           # OBV - On Balance Volume
 │
 ├── tests/
 │   ├── test_momentum_indicators.py  # Tests for momentum indicators
+│   ├── test_volume_indicators.py    # Tests for volume indicators
 │   └── ...
 ├── pyproject.toml
 └── README.md
