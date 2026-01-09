@@ -17,7 +17,8 @@
       "Bash(git push:*)",
       "Bash(dir:*)",
       "Bash(cat:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(venv/Scripts/python -m pytest tests/ -v)"
     ],
     "deny": [],
     "ask": []

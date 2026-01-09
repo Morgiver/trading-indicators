@@ -26,12 +26,25 @@
 - **MACD** (Moving Average Convergence Divergence) - Trend following momentum
 
 ### Trend
-- **SMA** (Simple Moving Average) - Trend identification
-- **EMA** (Exponential Moving Average) - More responsive trend following
-- **Bollinger Bands** - Volatility and price level analysis
+- **SMA** (Simple Moving Average) - Basic trend identification
+- **EMA** (Exponential Moving Average) - Responsive trend following
+- **DEMA** (Double Exponential Moving Average) - Reduced lag trend following
+- **TEMA** (Triple Exponential Moving Average) - Ultra-responsive moving average
+- **WMA** (Weighted Moving Average) - Linear weighted moving average
+- **TRIMA** (Triangular Moving Average) - Double-smoothed moving average
+- **KAMA** (Kaufman Adaptive Moving Average) - Adaptive noise-filtering MA
+- **MAMA** (MESA Adaptive Moving Average) - Cycle-adaptive MA with FAMA
+- **T3** (Triple Exponential Moving Average T3) - Tillson's smooth responsive MA
+- **HT_TRENDLINE** (Hilbert Transform Trendline) - Instantaneous trendline
+- **MA** (Moving Average) - Generic MA with multiple types (SMA/EMA/WMA/DEMA/TEMA/TRIMA/KAMA/MAMA/T3)
+- **MAVP** (Moving Average Variable Period) - Dynamic period moving average
+- **MIDPOINT** (MidPoint over period) - Midpoint of price range
+- **MIDPRICE** (Midpoint Price) - Midpoint of high/low range
+- **SAR** (Parabolic SAR) - Stop and Reverse indicator
+- **SAREXT** (Parabolic SAR Extended) - Enhanced SAR with separate long/short parameters
+- **Bollinger Bands** (BBANDS) - Volatility and price level analysis
 - **Pivot Points** - Swing High/Low detection with alternation rule
 - **FVG** (Fair Value Gap) - ICT/SMC gap detection
-- **SMA Crossover** - Golden/Death cross detection (composite indicator)
 
 ### Volatility
 - **ATR** (Average True Range) - Volatility measurement
