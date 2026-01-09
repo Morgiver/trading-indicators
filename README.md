@@ -331,38 +331,6 @@ for period in fvg.periods:
 fvg_data = fvg.to_numpy()
 ```
 
-### SMA Crossover (Composite Indicator)
-
-```python
-from trading_indicators import SMA, SMACrossover
-
-# Create SMAs first
-sma_fast = SMA(frame=frame, period=20, column_name='SMA_20')
-sma_slow = SMA(frame=frame, period=50, column_name='SMA_50')
-
-# Create crossover indicator
-crossover = SMACrossover(
-    frame=frame,
-    fast_column='SMA_20',
-    slow_column='SMA_50',
-    column_name='SMA_CROSS'
-)
-
-# Feed candles
-for candle in candles:
-    frame.feed(candle)
-
-# Check for crossovers
-latest_signal = crossover.get_latest()
-if latest_signal == 1:
-    print("Golden Cross detected! (bullish)")
-elif latest_signal == -1:
-    print("Death Cross detected! (bearish)")
-
-# Export to NumPy
-signals = crossover.to_numpy()
-```
-
 ## Integration with AssetView
 
 ```python
@@ -417,12 +385,6 @@ Instead of recalculating the entire indicator array on every update, each indica
 Some indicators mark previous periods when confirmation occurs:
 - **Pivot Points**: Marks the pivot candle after `right_bars` confirmation
 - **FVG**: Marks the middle candle when gap is confirmed
-
-### Composite Indicators
-
-Composite indicators depend on other indicators:
-- **SMA Crossover**: Reads SMA values from frame periods to detect crosses
-- Demonstrates how to build higher-level indicators from basic ones
 
 ### Data Access Pattern
 
@@ -544,17 +506,6 @@ FVG(frame, column_names=['FVG_TOP', 'FVG_BOTTOM', 'FVG_TYPE'], max_periods=None)
 - `is_bearish_fvg(period)` - Check if period contains bearish FVG
 - `to_numpy()` - Export as dict of numpy arrays
 
-### SMACrossover
-
-**Constructor:**
-```python
-SMACrossover(frame, fast_column='SMA_FAST', slow_column='SMA_SLOW', column_name='SMA_CROSS', max_periods=None)
-```
-
-**Methods:**
-- `get_latest()` - Get latest crossover signal (+1 golden, -1 death, 0 none)
-- `to_numpy()` - Export as numpy array
-
 ## Development
 
 ### Run Tests
@@ -579,10 +530,16 @@ trading-indicators/
 │   │   ├── __init__.py
 │   │   ├── sma.py           # SMA indicator
 │   │   ├── ema.py           # EMA indicator
+│   │   ├── dema.py          # DEMA indicator
+│   │   ├── tema.py          # TEMA indicator
+│   │   ├── wma.py           # WMA indicator
+│   │   ├── kama.py          # KAMA indicator
+│   │   ├── mama.py          # MAMA indicator
+│   │   ├── t3.py            # T3 indicator
+│   │   ├── sar.py           # Parabolic SAR
 │   │   ├── bollinger.py     # Bollinger Bands
 │   │   ├── pivot_points.py  # Swing High/Low
-│   │   ├── fvg.py           # Fair Value Gap
-│   │   └── sma_crossover.py # SMA Crossover
+│   │   └── fvg.py           # Fair Value Gap
 │   └── volatility/
 │       ├── __init__.py
 │       └── atr.py           # ATR indicator
