@@ -2,12 +2,12 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Indicators: 65+](https://img.shields.io/badge/indicators-65+-green.svg)](#supported-indicators)
+[![Indicators: 126+](https://img.shields.io/badge/indicators-126+-green.svg)](#supported-indicators)
 [![TA-Lib](https://img.shields.io/badge/powered%20by-TA--Lib-orange.svg)](https://ta-lib.org/)
 
 **Technical indicators library with automatic frame synchronization** built on top of [trading-frame](https://github.com/Morgiver/trading-frame).
 
-**65+ professional-grade technical indicators** including momentum, trend, volatility, volume, cycle, price, and statistical analysis tools, all with automatic synchronization and event-driven updates.
+**126+ professional-grade technical indicators** including momentum, trend, volatility, volume, cycle, price, statistical analysis, and candlestick pattern recognition, all with automatic synchronization and event-driven updates.
 
 ## Overview
 
@@ -109,6 +109,78 @@
 - **STDDEV** (Standard Deviation) - Volatility and dispersion measurement
 - **TSF** (Time Series Forecast) - Forecasted value using linear regression
 - **VAR** (Variance) - Statistical variance (square of standard deviation)
+
+### Pattern Recognition (61 candlestick patterns)
+All patterns return integer values: **0** (not detected), **100** (bullish), **-100** (bearish)
+
+#### Single & Double Candle Patterns
+- **CDLDOJI** - Doji (indecision candle with equal open/close)
+- **CDLHAMMER** - Hammer (bullish reversal at support)
+- **CDLSHOOTINGSTAR** - Shooting Star (bearish reversal at resistance)
+- **CDLINVERTEDHAMMER** - Inverted Hammer (bullish at support)
+- **CDLHANGINGMAN** - Hanging Man (bearish at resistance)
+- **CDLMARUBOZU** - Marubozu (strong trend candle with no wicks)
+- **CDLCLOSINGMARUBOZU** - Closing Marubozu (strong close)
+- **CDLSPINNINGTOP** - Spinning Top (indecision with small body)
+- **CDLBELTHOLD** - Belt-hold (strong trend continuation)
+- **CDLLONGLINE** - Long Line Candle (strong directional move)
+- **CDLSHORTLINE** - Short Line Candle (consolidation)
+- **CDLRICKSHAWMAN** - Rickshaw Man (high indecision doji)
+- **CDLHIGHWAVE** - High-Wave Candle (extreme indecision)
+- **CDLENGULFING** - Engulfing Pattern (trend reversal)
+- **CDLHARAMI** - Harami Pattern (potential reversal)
+- **CDLHARAMICROSS** - Harami Cross (doji inside previous candle)
+- **CDLPIERCING** - Piercing Pattern (bullish reversal)
+- **CDLDARKCLOUDCOVER** - Dark Cloud Cover (bearish reversal)
+- **CDLKICKING** - Kicking (strong reversal with gap)
+- **CDLKICKINGBYLENGTH** - Kicking by Length (reversal by marubozu length)
+
+#### Doji Variations
+- **CDLDOJISTAR** - Doji Star (doji with gap)
+- **CDLDRAGONFLYDOJI** - Dragonfly Doji (T-shaped, bullish)
+- **CDLGRAVESTONEDOJI** - Gravestone Doji (inverted T, bearish)
+- **CDLLONGLEGGEDDOJI** - Long Legged Doji (high volatility indecision)
+- **CDLTAKURI** - Takuri (dragonfly with very long lower shadow)
+
+#### Three Candle Patterns
+- **CDL3BLACKCROWS** - Three Black Crows (strong bearish reversal)
+- **CDL3WHITESOLDIERS** - Three Advancing White Soldiers (strong bullish)
+- **CDL3INSIDE** - Three Inside Up/Down (reversal confirmation)
+- **CDL3OUTSIDE** - Three Outside Up/Down (strong reversal)
+- **CDL3LINESTRIKE** - Three-Line Strike (trend continuation/reversal)
+- **CDL3STARSINSOUTH** - Three Stars In The South (bullish reversal)
+- **CDLIDENTICAL3CROWS** - Identical Three Crows (bearish with equal closes)
+- **CDLMORNINGSTAR** - Morning Star (bullish reversal)
+- **CDLEVENINGSTAR** - Evening Star (bearish reversal)
+- **CDLMORNINGDOJISTAR** - Morning Doji Star (bullish with doji)
+- **CDLEVENINGDOJISTAR** - Evening Doji Star (bearish with doji)
+- **CDLTRISTAR** - Tristar Pattern (three doji reversal)
+- **CDLABANDONEDBABY** - Abandoned Baby (island reversal)
+- **CDLRISEFALL3METHODS** - Rising/Falling Three Methods (continuation)
+- **CDLXSIDEGAP3METHODS** - Upside/Downside Gap Three Methods
+
+#### Advanced Patterns
+- **CDL2CROWS** - Two Crows (bearish reversal)
+- **CDLUPSIDEGAP2CROWS** - Upside Gap Two Crows (bearish)
+- **CDLADVANCEBLOCK** - Advance Block (bullish weakening)
+- **CDLSTALLEDPATTERN** - Stalled Pattern (uptrend stalling)
+- **CDLBREAKAWAY** - Breakaway (trend reversal with gap)
+- **CDLCONCEALBABYSWALL** - Concealing Baby Swallow (bullish continuation)
+- **CDLCOUNTERATTACK** - Counterattack (reversal with equal closes)
+- **CDLGAPSIDESIDEWHITE** - Up/Down-gap side-by-side white lines
+- **CDLHIKKAKE** - Hikkake Pattern (false breakout trap)
+- **CDLHIKKAKEMOD** - Modified Hikkake (enhanced version)
+- **CDLHOMINGPIGEON** - Homing Pigeon (bullish harami variation)
+- **CDLINNECK** - In-Neck Pattern (bearish continuation)
+- **CDLONNECK** - On-Neck Pattern (bearish continuation)
+- **CDLTHRUSTING** - Thrusting Pattern (bearish continuation)
+- **CDLLADDERBOTTOM** - Ladder Bottom (bullish reversal)
+- **CDLMATCHINGLOW** - Matching Low (bullish reversal)
+- **CDLMATHOLD** - Mat Hold (bullish continuation)
+- **CDLSEPARATINGLINES** - Separating Lines (continuation)
+- **CDLSTICKSANDWICH** - Stick Sandwich (reversal)
+- **CDLTASUKIGAP** - Tasuki Gap (continuation)
+- **CDLUNIQUE3RIVER** - Unique 3 River (bullish reversal)
 
 ## Installation
 
@@ -1023,6 +1095,42 @@ print(f"ETH/BTC correlation: {correlation[-1]:.4f}")
 # Beta coefficient (relative volatility)
 beta = BETA.compute(eth_prices, btc_prices, length=5)
 print(f"ETH beta vs BTC: {beta[-1]:.4f}")
+```
+
+### Candlestick Pattern Recognition
+
+```python
+from trading_indicators.pattern_recognition import (
+    CDLDOJI, CDLHAMMER, CDLENGULFING, CDLMORNINGSTAR,
+    CDL3BLACKCROWS, CDLSHOOTINGSTAR
+)
+
+# Mode 1: Auto-synced with frame
+doji = CDLDOJI(frame=frame)
+hammer = CDLHAMMER(frame=frame)
+engulfing = CDLENGULFING(frame=frame)
+morning_star = CDLMORNINGSTAR(frame=frame, penetration=0.3)
+
+# Patterns return 0 (not detected), 100 (bullish), or -100 (bearish)
+if doji.is_detected():
+    print(f"Doji detected: {doji.get_signal()}")  # BULLISH, BEARISH, or NONE
+
+if hammer.is_bullish():
+    print("Bullish Hammer pattern detected!")
+
+if engulfing.is_bearish():
+    print("Bearish Engulfing pattern detected!")
+
+# Mode 2: Static utility mode
+import numpy as np
+
+open_prices = np.array([100, 102, 101, 99, 98])
+high_prices = np.array([103, 104, 103, 101, 100])
+low_prices = np.array([99, 101, 100, 98, 97])
+close_prices = np.array([102, 103, 101, 100, 99])
+
+pattern_signals = CDLDOJI.compute(open_prices, high_prices, low_prices, close_prices)
+# Returns array of pattern signals: [0, 0, 0, 100, -100]
 ```
 
 ## Integration with AssetView
