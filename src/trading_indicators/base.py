@@ -242,16 +242,16 @@ class BaseIndicator(ABC):
         Export indicator values as pandas Series or DataFrame.
 
         Returns:
-            pd.Series for single-value indicators
-            pd.DataFrame for multi-value indicators
+            pd.Series for single-value indicators (with DatetimeIndex)
+            pd.DataFrame for multi-value indicators (with DatetimeIndex)
         """
         import pandas as pd
         import numpy as np
 
         data = self.to_numpy()
 
-        # Create timestamps index from periods
-        timestamps = [p.open_date for p in self.periods]
+        # Create DatetimeIndex from periods
+        timestamps = pd.DatetimeIndex([p.open_date for p in self.periods])
 
         # Handle single array (Series) or dict of arrays (DataFrame)
         if isinstance(data, dict):
