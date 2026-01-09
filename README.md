@@ -2,12 +2,12 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Indicators: 48+](https://img.shields.io/badge/indicators-48+-green.svg)](#supported-indicators)
+[![Indicators: 53+](https://img.shields.io/badge/indicators-53+-green.svg)](#supported-indicators)
 [![TA-Lib](https://img.shields.io/badge/powered%20by-TA--Lib-orange.svg)](https://ta-lib.org/)
 
 **Technical indicators library with automatic frame synchronization** built on top of [trading-frame](https://github.com/Morgiver/trading-frame).
 
-**48+ professional-grade technical indicators** including momentum, trend, volatility, and volume analysis tools, all with automatic synchronization and event-driven updates.
+**53+ professional-grade technical indicators** including momentum, trend, volatility, volume, and cycle analysis tools, all with automatic synchronization and event-driven updates.
 
 ## Overview
 
@@ -85,6 +85,13 @@
 - **AD** (Chaikin A/D Line) - Accumulation/Distribution line
 - **ADOSC** (Chaikin A/D Oscillator) - A/D momentum oscillator
 - **OBV** (On Balance Volume) - Cumulative volume-based indicator
+
+### Cycle (5 indicators - Hilbert Transform)
+- **HT_DCPERIOD** (Dominant Cycle Period) - Identifies the dominant cycle period (number of bars in current cycle)
+- **HT_DCPHASE** (Dominant Cycle Phase) - Current phase angle of the dominant cycle (degrees)
+- **HT_PHASOR** (Phasor Components) - InPhase and Quadrature components for cycle analysis
+- **HT_SINE** (Sine Wave) - Sine and LeadSine waves for cycle prediction and timing
+- **HT_TRENDMODE** (Trend vs Cycle Mode) - Binary indicator: 1 = trending market, 0 = cycling market
 
 ## Installation
 
@@ -654,6 +661,190 @@ if obv.is_bearish_divergence(lookback=10):
 
 # Export to NumPy
 obv_array = obv.to_numpy()
+```
+
+### HT_TRENDMODE (Hilbert Transform - Trend vs Cycle Mode)
+
+```python
+from trading_indicators import HT_TRENDMODE
+
+# Create HT_TRENDMODE indicator
+ht_trendmode = HT_TRENDMODE(frame=frame, column_name='HT_TRENDMODE')
+
+# Feed candles (need 63+ periods for calculation)
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest = ht_trendmode.get_latest()
+print(f"Trend Mode: {latest}")  # 1 = trending, 0 = cycling
+
+# Check market mode
+if ht_trendmode.is_trending():
+    print("Market is in TREND mode - use trend-following strategies")
+elif ht_trendmode.is_cycling():
+    print("Market is in CYCLE mode - use mean-reversion strategies")
+
+# Detect mode changes
+mode_change = ht_trendmode.mode_changed()
+if mode_change == 'to_trend':
+    print("Market transitioned to TREND mode")
+elif mode_change == 'to_cycle':
+    print("Market transitioned to CYCLE mode")
+
+# Get mode stability
+stability = ht_trendmode.get_mode_stability(lookback=10)
+print(f"Mode stability: {stability:.1f}%")
+
+# Get consecutive duration
+if ht_trendmode.is_trending():
+    duration = ht_trendmode.get_trend_duration()
+    print(f"Trending for {duration} periods")
+
+# Get human-readable mode
+mode_str = ht_trendmode.get_mode_string()
+print(f"Current mode: {mode_str}")  # 'TREND' or 'CYCLE'
+
+# Export to NumPy
+trendmode_array = ht_trendmode.to_numpy()
+```
+
+### HT_DCPERIOD (Hilbert Transform - Dominant Cycle Period)
+
+```python
+from trading_indicators import HT_DCPERIOD
+
+# Create HT_DCPERIOD indicator
+ht_dcperiod = HT_DCPERIOD(frame=frame, column_name='HT_DCPERIOD')
+
+# Feed candles (need 32+ periods for calculation)
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest = ht_dcperiod.get_latest()
+print(f"Dominant Cycle Period: {latest:.2f} bars")
+
+# Get cycle type
+cycle_type = ht_dcperiod.get_cycle_type()
+print(f"Cycle type: {cycle_type}")  # 'fast', 'normal', or 'slow'
+
+# Check if cycle is changing
+if ht_dcperiod.is_cycle_shortening(lookback=5):
+    print("Cycle period is shortening - market becoming more volatile")
+
+if ht_dcperiod.is_cycle_lengthening(lookback=5):
+    print("Cycle period is lengthening - market slowing down")
+
+# Get average cycle period
+avg_cycle = ht_dcperiod.get_average_cycle(lookback=20)
+print(f"Average cycle over 20 periods: {avg_cycle:.2f} bars")
+
+# Export to NumPy
+dcperiod_array = ht_dcperiod.to_numpy()
+```
+
+### HT_DCPHASE (Hilbert Transform - Dominant Cycle Phase)
+
+```python
+from trading_indicators import HT_DCPHASE
+
+# Create HT_DCPHASE indicator
+ht_dcphase = HT_DCPHASE(frame=frame, column_name='HT_DCPHASE')
+
+# Feed candles (need 63+ periods for calculation)
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest = ht_dcphase.get_latest()
+print(f"Dominant Cycle Phase: {latest:.2f}°")
+
+# Get phase quadrant
+quadrant = ht_dcphase.get_phase_quadrant()
+print(f"Phase quadrant: {quadrant}")  # 'Q1', 'Q2', 'Q3', or 'Q4'
+
+# Check trend phase
+if ht_dcphase.is_early_uptrend():
+    print("Early uptrend phase (Q1: 0-90°)")
+elif ht_dcphase.is_late_uptrend():
+    print("Late uptrend phase (Q2: 90-180°) - potential top")
+elif ht_dcphase.is_early_downtrend():
+    print("Early downtrend phase (Q3: 180-270°)")
+elif ht_dcphase.is_late_downtrend():
+    print("Late downtrend phase (Q4: 270-360°) - potential bottom")
+
+# Get phase velocity (rate of change)
+velocity = ht_dcphase.get_phase_velocity(lookback=3)
+print(f"Phase velocity: {velocity:.2f}°/period")
+
+# Check if phase is changing rapidly
+if ht_dcphase.is_phase_accelerating():
+    print("Phase accelerating - strong momentum")
+
+# Export to NumPy
+dcphase_array = ht_dcphase.to_numpy()
+```
+
+### HT_SINE (Hilbert Transform - Sine Wave)
+
+```python
+from trading_indicators import HT_SINE
+
+# Create HT_SINE indicator
+ht_sine = HT_SINE(frame=frame, column_names=['HT_SINE', 'HT_LEADSINE'])
+
+# Feed candles (need 63+ periods for calculation)
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest = ht_sine.get_latest()
+print(f"Sine: {latest['HT_SINE']:.4f}")
+print(f"LeadSine: {latest['HT_LEADSINE']:.4f}")
+
+# Detect crossovers (cycle turning points)
+if ht_sine.is_bullish_crossover():
+    print("Bullish crossover: Sine crossed above LeadSine")
+
+if ht_sine.is_bearish_crossover():
+    print("Bearish crossover: Sine crossed below LeadSine")
+
+# Export to NumPy (returns dict)
+sine_data = ht_sine.to_numpy()
+sine_array = sine_data['HT_SINE']
+leadsine_array = sine_data['HT_LEADSINE']
+```
+
+### HT_PHASOR (Hilbert Transform - Phasor Components)
+
+```python
+from trading_indicators import HT_PHASOR
+
+# Create HT_PHASOR indicator
+ht_phasor = HT_PHASOR(frame=frame, column_names=['HT_INPHASE', 'HT_QUADRATURE'])
+
+# Feed candles (need 63+ periods for calculation)
+for candle in candles:
+    frame.feed(candle)
+
+# Access values
+latest = ht_phasor.get_latest()
+print(f"InPhase: {latest['HT_INPHASE']:.4f}")
+print(f"Quadrature: {latest['HT_QUADRATURE']:.4f}")
+
+# Get phasor magnitude (cycle strength)
+magnitude = ht_phasor.get_magnitude()
+print(f"Phasor magnitude: {magnitude:.4f}")
+
+# Get phase angle
+angle = ht_phasor.get_phase_angle()
+print(f"Phase angle: {angle:.2f}°")
+
+# Export to NumPy (returns dict)
+phasor_data = ht_phasor.to_numpy()
+inphase_array = phasor_data['HT_INPHASE']
+quadrature_array = phasor_data['HT_QUADRATURE']
 ```
 
 ## Integration with AssetView
