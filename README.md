@@ -2,12 +2,12 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Indicators: 57+](https://img.shields.io/badge/indicators-57+-green.svg)](#supported-indicators)
+[![Indicators: 65+](https://img.shields.io/badge/indicators-65+-green.svg)](#supported-indicators)
 [![TA-Lib](https://img.shields.io/badge/powered%20by-TA--Lib-orange.svg)](https://ta-lib.org/)
 
 **Technical indicators library with automatic frame synchronization** built on top of [trading-frame](https://github.com/Morgiver/trading-frame).
 
-**57+ professional-grade technical indicators** including momentum, trend, volatility, volume, cycle, and price analysis tools, all with automatic synchronization and event-driven updates.
+**65+ professional-grade technical indicators** including momentum, trend, volatility, volume, cycle, price, and statistical analysis tools, all with automatic synchronization and event-driven updates.
 
 ## Overview
 
@@ -98,6 +98,17 @@
 - **MEDPRICE** (Median Price) - (High + Low) / 2
 - **TYPPRICE** (Typical Price) - (High + Low + Close) / 3
 - **WCLPRICE** (Weighted Close Price) - (High + Low + 2*Close) / 4
+
+### Statistical (9 indicators)
+- **BETA** (Beta Coefficient) - Measures relative volatility between two assets
+- **CORREL** (Pearson's Correlation) - Linear correlation coefficient between two series (-1 to 1)
+- **LINEARREG** (Linear Regression) - Linear regression line fitted to price data
+- **LINEARREG_ANGLE** (Linear Regression Angle) - Angle of regression line in degrees
+- **LINEARREG_INTERCEPT** (Linear Regression Intercept) - Y-intercept of regression line
+- **LINEARREG_SLOPE** (Linear Regression Slope) - Slope (rate of change) of regression line
+- **STDDEV** (Standard Deviation) - Volatility and dispersion measurement
+- **TSF** (Time Series Forecast) - Forecasted value using linear regression
+- **VAR** (Variance) - Statistical variance (square of standard deviation)
 
 ## Installation
 
@@ -919,6 +930,101 @@ typprice_array = typprice.to_numpy()
 wclprice_array = wclprice.to_numpy()
 ```
 
+### Statistical Indicators
+
+```python
+from trading_indicators.stats import (
+    BETA, CORREL, LINEARREG, LINEARREG_ANGLE, LINEARREG_SLOPE,
+    STDDEV, TSF, VAR
+)
+import numpy as np
+
+# Statistical indicators can work in two modes:
+# 1. Auto-synced with frame (like other indicators)
+# 2. Static utility mode for quick calculations
+
+# Mode 1: Auto-synced with frame
+frame = TimeFrame('5T', max_periods=100)
+
+# Standard deviation for volatility measurement
+stddev = STDDEV(frame=frame, length=20, nbdev=1, column_name='STDDEV')
+
+# Linear regression for trend analysis
+linearreg = LINEARREG(frame=frame, length=14, column_name='LINEARREG')
+lr_angle = LINEARREG_ANGLE(frame=frame, length=14, column_name='REG_ANGLE')
+lr_slope = LINEARREG_SLOPE(frame=frame, length=14, column_name='REG_SLOPE')
+
+# Time series forecast
+tsf = TSF(frame=frame, length=14, column_name='TSF')
+
+# Variance measurement
+var = VAR(frame=frame, length=20, nbdev=1, column_name='VAR')
+
+# Feed candles - all indicators update automatically
+for candle in candles:
+    frame.feed(candle)
+
+# Check volatility
+if stddev.is_high_volatility(threshold=2.0):
+    print("High volatility detected")
+elif stddev.is_low_volatility(threshold=0.5):
+    print("Low volatility - potential breakout coming")
+
+# Check if volatility is expanding or contracting
+if stddev.is_expanding():
+    print("Volatility expanding - trend acceleration")
+
+# Analyze trend direction and strength
+if lr_angle.is_steep_uptrend(threshold=45):
+    print("Strong uptrend (angle > 45 degrees)")
+elif lr_angle.is_flat(threshold=10):
+    print("Market consolidating (angle < 10 degrees)")
+
+# Check price position relative to regression
+if linearreg.is_above_regression():
+    distance = linearreg.get_distance_from_regression()
+    print(f"Price {distance:.2f}% above regression line")
+
+# Check if trend is accelerating
+if lr_slope.is_accelerating():
+    print("Trend momentum is accelerating")
+
+# Compare price to forecast
+if tsf.is_price_above_forecast():
+    error = tsf.get_forecast_error()
+    print(f"Price exceeding forecast by {error:.2f}%")
+
+# Mode 2: Static utility mode (no frame required)
+prices = np.array([100, 102, 101, 103, 105, 104, 106, 108, 107, 109])
+
+# Quick volatility calculation
+volatility = STDDEV.compute(prices, length=5, nbdev=1)
+print(f"Current volatility: {volatility[-1]:.4f}")
+
+# Quick linear regression analysis
+regression_line = LINEARREG.compute(prices, length=5)
+regression_angle = LINEARREG_ANGLE.compute(prices, length=5)
+regression_slope = LINEARREG_SLOPE.compute(prices, length=5)
+
+print(f"Regression value: {regression_line[-1]:.2f}")
+print(f"Trend angle: {regression_angle[-1]:.2f} degrees")
+print(f"Trend slope: {regression_slope[-1]:.4f}")
+
+# Forecast next value
+forecast = TSF.compute(prices, length=5)
+print(f"Next period forecast: {forecast[-1]:.2f}")
+
+# Correlation between two assets (requires two series)
+btc_prices = np.array([50000, 51000, 50500, 52000, 53000])
+eth_prices = np.array([3000, 3100, 3050, 3150, 3200])
+correlation = CORREL.compute(eth_prices, btc_prices, length=5)
+print(f"ETH/BTC correlation: {correlation[-1]:.4f}")
+
+# Beta coefficient (relative volatility)
+beta = BETA.compute(eth_prices, btc_prices, length=5)
+print(f"ETH beta vs BTC: {beta[-1]:.4f}")
+```
+
 ## Integration with AssetView
 
 ```python
@@ -1170,11 +1276,23 @@ trading-indicators/
 │   │   ├── __init__.py
 │   │   └── atr.py           # ATR - Average True Range
 │   │
-│   └── volume/              # 3 volume indicators
+│   ├── volume/              # 3 volume indicators
+│   │   ├── __init__.py
+│   │   ├── ad.py            # AD - Chaikin A/D Line
+│   │   ├── adosc.py         # ADOSC - Chaikin A/D Oscillator
+│   │   └── obv.py           # OBV - On Balance Volume
+│   │
+│   └── stats/               # 9 statistical indicators
 │       ├── __init__.py
-│       ├── ad.py            # AD - Chaikin A/D Line
-│       ├── adosc.py         # ADOSC - Chaikin A/D Oscillator
-│       └── obv.py           # OBV - On Balance Volume
+│       ├── beta.py          # BETA - Beta Coefficient
+│       ├── correl.py        # CORREL - Pearson's Correlation
+│       ├── linearreg.py     # LINEARREG - Linear Regression
+│       ├── linearreg_angle.py        # LINEARREG_ANGLE - Regression Angle
+│       ├── linearreg_intercept.py    # LINEARREG_INTERCEPT - Y-Intercept
+│       ├── linearreg_slope.py        # LINEARREG_SLOPE - Regression Slope
+│       ├── stddev.py        # STDDEV - Standard Deviation
+│       ├── tsf.py           # TSF - Time Series Forecast
+│       └── var.py           # VAR - Variance
 │
 ├── tests/
 │   ├── test_momentum_indicators.py  # Tests for momentum indicators
